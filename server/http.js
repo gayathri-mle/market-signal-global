@@ -1,0 +1,4 @@
+const limits=new Map();
+export function rateLimit(req,res){const key=req.headers['x-forwarded-for']?.split(',')[0]||req.socket?.remoteAddress||'unknown';const n=Date.now();let bucket=limits.get(key);if(!bucket||n-bucket.at>60000)bucket={at:n,count:0};bucket.count++;limits.set(key,bucket);if(limits.size>3000)for(const [k,v] of limits)if(n-v.at>60000)limits.delete(k);if(bucket.count>15){send(res,429,{error:'Please wait a minute before another research request.'});return true;}return false;}
+export function send(res,status,value){res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('X-Content-Type-Options','nosniff');res.end(JSON.stringify(value));}
+export async function body(req){if(req.body&&typeof req.body==='object')return req.body;let text='';for await(const chunk of req){text+=chunk;if(text.length>12000)throw Error('Request too large');}return JSON.parse(text||'{}');}

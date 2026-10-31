@@ -1,0 +1,28 @@
+name: Daily market watch
+on:
+  schedule:
+    - cron: '47 2 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: market-monitor
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: npm run collect
+      - name: Save monitoring history
+        run: |
+          git config user.name "MarketSignal Monitor"
+          git config user.email "monitor@users.noreply.github.com"
+          git add dist/data/latest.json
+          git diff --cached --quiet || git commit -m "Update monitored market evidence"
+          git push
